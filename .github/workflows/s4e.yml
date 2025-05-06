@@ -10,6 +10,7 @@ on:
     branches: [ "main" ]
     paths:
       - .github/workflows/s4e.yml
+      - .github/actions
       - etiss
       - etiss_riscv_examples_s4e
       - M2-ISA-R
@@ -20,6 +21,7 @@ on:
     branches: [ "main" ]
     paths:
       - .github/workflows/s4e.yml
+      - .github/actions
       - etiss
       - etiss_riscv_examples_s4e
       - M2-ISA-R
