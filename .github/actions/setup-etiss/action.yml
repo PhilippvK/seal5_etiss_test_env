@@ -1,5 +1,5 @@
-name: 'Update Refs'
-description: 'Update submodule commits based on trigger'
+name: 'Setup ETISS'
+description: 'Patch and build ETISS'
 inputs:
   etiss-arch:
     description: 'Name of ETISS arch'  # TODO: multiple

@@ -1,0 +1,50 @@
+name: 'Run SW Examples'
+description: 'Simulate Example Target SW'
+inputs:
+  examples-dir:
+    description: 'Examples SW directory'
+    required: true
+    default: ''
+  progs:
+    description: 'Comma-separated list of programs'
+    required: true
+    default: 'hello_world'
+  etiss-arch:
+    description: 'Name of used ETISS CPU arch'
+    required: true
+    default: '?'
+  enable_summary:
+    description: 'Enable Job Summary'
+    required: true
+outputs: []
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run S4E Examples on ${{ inputs.etiss_arch }}
+      run: |
+        set -o pipefail
+        for prog in $(echo ${{ inputs.progs }} | sed 's/,/ /'); do
+            echo "--- Program: $prog ---" | tee -a out.txt
+            ${{ inputs.etiss-install-dir }}/bin/bare_etiss_processor -i${{ inputs.examples-dir}}/build/install/ini/$prog.ini --arch.cpu=${{ inputs.etiss-arch }} 2>&1 | tee -a out.txt
+        done
+        set +o pipefail
+
+    - name: Add Summary (Success)
+      if: success()
+      run: |
+        echo "### Status" >> $GITHUB_STEP_SUMMARY
+        echo "OK :heavy_check_mark:" >> $GITHUB_STEP_SUMMARY
+        echo >> $GITHUB_STEP_SUMMARY
+
+    - name: Add Summary (Failure)
+      if: failure()
+      run: |
+        echo "### Status" >> $GITHUB_STEP_SUMMARY
+        echo "FAILING :x:" >> $GITHUB_STEP_SUMMARY
+        echo >> $GITHUB_STEP_SUMMARY
+        echo "ETISS Sim Outputs:" >> $GITHUB_STEP_SUMMARY
+        cat out.txt >> $GITHUB_STEP_SUMMARY
+        echo >> $GITHUB_STEP_SUMMARY
+        echo "- - -" >> $GITHUB_STEP_SUMMARY
+        echo >> $GITHUB_STEP_SUMMARY

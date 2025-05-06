@@ -1,5 +1,5 @@
-name: 'Update Refs'
-description: 'Update submodule commits based on trigger'
+name: 'Prepare PR branch'
+description: 'Create PR branch if not existing'
 inputs:
   trigger:
     description: 'Which repo triggered the workflow'
@@ -9,9 +9,16 @@ inputs:
     description: 'New ref/commit to checkout'
     required: true
     default: ''
+  enable_summary:
+    description: 'Enable Job Summary'
+    required: true
+    default: 'true'
 outputs:
-  num-changed:
-    description: "Number of changes in repo"
+  branch-name:
+    description: "Name of PR branch"
+    value: ${{ steps.check-branch.outputs.BRANCH_NAME }}
+  branch-exists:
+    description: "Does PR branch already exist?"
     value: ${{ steps.check-branch.outputs.BRANCH_EXISTS }}
   enable_summary:
     description: 'Enable Job Summary'
@@ -25,6 +32,8 @@ runs:
       id: check-branch
       # if: steps.update-refs.outputs.num-changed != '0'
       run: |
+        BRANCH_NAME=pr_update_${{ inputs.trigger }}
+        echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_OUTPUT
         CHECK_BRANCH=$(git ls-remote --heads origin pr_update_${{ inputs.trigger }} | wc -l 2>&1)
         echo "BRANCH_EXISTS=$CHECK_BRANCH" >> $GITHUB_OUTPUT   #1 if branch exists, 0 if not
 

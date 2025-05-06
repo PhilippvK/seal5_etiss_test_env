@@ -1,0 +1,44 @@
+name: 'Finalize PR'
+description: 'Open PR or update existing one'
+inputs:
+  trigger:
+    description: 'Which repo triggered the workflow'
+    required: true
+    default: ''
+  ref:
+    description: 'New ref/commit to checkout'
+    required: true
+    default: ''
+  branch-name:
+    description: 'Name of PR branch'
+    required: true
+    default: ''
+  branch-exists:
+    description: 'If branch already exists'
+    required: true
+    default: '0'
+  enable_summary:
+    description: 'Enable Job Summary'
+    required: true
+    default: 'true'
+outputs: {}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Push changes to PR branch
+      if: inputs.branch-exists == '1'
+      uses: ad-m/github-push-action@master
+      with:
+        # github_token: ${{ secrets.SEAL5_ACCESS_TOKEN }}
+        branch: pr_update_${{ github.event.client_payload.from }}
+        force: true
+
+    - name: Create Pull Request
+      if: inputs.branch-exists == '0'
+      uses: peter-evans/create-pull-request@v6
+      with:
+        commit-message: "Auto-Update ${{ inputs.trigger }} submodule to ${{ inputs.ref }}"
+        title: "Auto-Update ${{ inputs.trigger }} submodule"
+        branch: ${{ inputs.branch-name }}
+        # token: ${{ secrets.SEAL5_ACCESS_TOKEN }}

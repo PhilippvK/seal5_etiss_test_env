@@ -1,0 +1,63 @@
+name: 'Setup Seal5'
+description: 'Patch and build LLVM'
+inputs:
+  out-dir:
+    description: 'Destination of Seal5 artifacts'
+    required: true
+    default: ''
+  install-dir:
+    description: 'Destination of LLVM install dir'
+    required: true
+    default: ''
+  cdsl-dir:
+    description: 'Directory with CDSL files used by demo'
+    required: true
+    default: ''
+  build-config:
+    description: 'Seal5 LLVM build config'
+    required: true
+    default: 'release'
+  llvm-ref:
+    description: 'Base LLVM version'
+    required: true
+    default: 'llvmorg-19.1.7'
+  demo-script:
+    description: 'Path to demo script'
+    required: true
+    default: ''
+  enable_summary:
+    description: 'Enable Job Summary'
+    required: true
+outputs: []
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Seal5
+      run: |
+        cd seal5
+        # virtualenv -p python${{ matrix.python-version }} venv
+        virtualenv -p python3 venv
+        source venv/bin/activate
+        pip install -r requirements.txt
+        pip install -e .
+
+    - name: Run Seal5 S4E Demo
+      if: inputs.enable_summary == 'true'
+      run: |
+        echo "Seal5 Cache Miss -> rebuild required" >> $GITHUB_STEP_SUMMARY
+
+    - name: Run Seal5 S4E Demo
+      run: |
+        cd seal5/
+        source venv/bin/activate
+        export PYTHONPATH=$(pwd)
+        OUT_DIR=${{ inputs.out-dir }} DEMO_CDSL_DIR=$(pwd)/../riscv-coredsl-extensions DEST=${{ inputs.install-dir }} BUILD_CONFIG=${{ inputs.build-config }} LLVM_REF=${{ inputs.llvm-ref }} CCACHE=1 VERBOSE=0 PROGESS=1 CLONE_DEPTH=1 IGNORE_ERROR=1 TEST=1 INSTALL=1 EXPORT=1 python3 ${{ inputs.demo-script }}
+        # TODO: expose ccache etc.
+
+    - name: Compress Seal5 install dir
+      run: |
+        # TODO: make compression optional
+        cd ${{ inputs.install-dir }}
+        XZ_OPT='-T0 -9' tar -cJf ${{ inputs.install-dir }}.tar.xz .
+        cd -
