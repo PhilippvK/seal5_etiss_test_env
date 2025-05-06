@@ -16,12 +16,13 @@ inputs:
   enable_summary:
     description: 'Enable Job Summary'
     required: true
-outputs: []
+outputs: {}
 
 runs:
   using: "composite"
   steps:
     - name: Run S4E Examples on ${{ inputs.etiss_arch }}
+      shell: bash
       run: |
         set -o pipefail
         for prog in $(echo ${{ inputs.progs }} | sed 's/,/ /'); do
@@ -32,6 +33,7 @@ runs:
 
     - name: Add Summary (Success)
       if: success()
+      shell: bash
       run: |
         echo "### Status" >> $GITHUB_STEP_SUMMARY
         echo "OK :heavy_check_mark:" >> $GITHUB_STEP_SUMMARY
@@ -39,6 +41,7 @@ runs:
 
     - name: Add Summary (Failure)
       if: failure()
+      shell: bash
       run: |
         echo "### Status" >> $GITHUB_STEP_SUMMARY
         echo "FAILING :x:" >> $GITHUB_STEP_SUMMARY

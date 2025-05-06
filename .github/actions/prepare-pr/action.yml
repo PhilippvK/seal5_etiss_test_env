@@ -31,6 +31,7 @@ runs:
     - name: Check if PR Branch already exists
       id: check-branch
       # if: steps.update-refs.outputs.num-changed != '0'
+      shell: bash
       run: |
         BRANCH_NAME=pr_update_${{ inputs.trigger }}
         echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_OUTPUT
@@ -40,6 +41,7 @@ runs:
     - name: Switch to PR Branch
       # if: steps.check_branch.outputs.BRANCH_EXISTS == '1' && steps.update-refs.outputs.num-changed != '0'
       if: steps.check_branch.outputs.BRANCH_EXISTS == '1'
+      shell: bash
       run: |
         git remote set-url origin https://x-access-token:${{ secrets.github_key }}@github.com/$GITHUB_REPOSITORY
         # git fetch --all
@@ -58,5 +60,6 @@ runs:
 
     - name: Commit Refs to PR branch
       # if: steps.update-refs.outputs.num-changed != '0'
+      shell: bash
       run: |
         git commit -m "Auto-Update ${{ inputs.trigger }} submodule to ${{ inputs.ref }}"

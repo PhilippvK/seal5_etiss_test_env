@@ -44,7 +44,8 @@ runs:
   steps:
     - name: Update CDSL ref
       if: inputs.trigger == 'cdsl'
-      run:
+      shell: bash
+      run: |
         git -C etiss_arch_riscv checkout ${{ inputs.ref }}
         git -C etiss_arch_riscv submodule update --init --recursive
         git add etiss_arch_riscv
@@ -52,6 +53,7 @@ runs:
 
     - name: Update S4E CDSL ref
       if: inputs.trigger == 's4e-cdsl'
+      shell: bash
       run: |
         git -C riscv-coredsl-extensions checkout ${{ inputs.ref }}
         git add riscv-coredsl-extensions
@@ -59,6 +61,7 @@ runs:
 
     - name: Update M2-ISA-R ref
       if: inputs.trigger == 'm2isar'
+      shell: bash
       run: |
         git -C M2-ISA-R checkout ${{ inputs.ref }}
         git add M2-ISA-R
@@ -66,6 +69,7 @@ runs:
 
     - name: Update Seal5 ref
       if: inputs.trigger == 'seal5'
+      shell: bash
       run: |
         git -C seal5 checkout ${{ inputs.ref }}
         git -C seal5 submodule update --init --recursive
@@ -74,6 +78,7 @@ runs:
 
     - name: Update Examples ref
       if: inputs.trigger == 'examples'
+      shell: bash
       run: |
         git -C etiss_riscv_examples checkout ${{ inputs.ref }}
         git -C etiss_riscv_examples submodule update --init --recursive
@@ -81,6 +86,7 @@ runs:
 
     - name: Update S4E Examples ref
       if: inputs.trigger == 's4e-examples'
+      shell: bash
       run: |
         git -C etiss_riscv_examples_s4e checkout ${{ inputs.ref }}
         git -C etiss_riscv_examples_s4e submodule update --init --recursive
@@ -89,6 +95,7 @@ runs:
 
     - name: Update ETISS ref
       if: inputs.trigger == 'etiss'
+      shell: bash
       run: |
         git -C etiss checkout ${{ inputs.ref }}
         git add etiss
@@ -96,6 +103,7 @@ runs:
     # TODO: add to summary and outputs
     - name: Get Refs
       id: refs
+      shell: bash
       run: |
         echo "seal5_ref=$(git -C seal5 rev-parse HEAD)" >> $GITHUB_OUTPUT
         echo "etiss_ref=$(git -C etiss rev-parse HEAD)" >> $GITHUB_OUTPUT
@@ -109,6 +117,7 @@ runs:
     - name: Add and count changed files
       id: count-files
       working-directory: ./
+      shell: bash
       run: |
         NUM_STAGED=$(git diff --cached --numstat | wc -l 2>&1)
         echo "NUM_CHANGED=$NUM_STAGED" >> $GITHUB_OUTPUT

@@ -24,18 +24,19 @@ inputs:
   enable_summary:
     description: 'Enable Job Summary'
     required: true
-outputs: []
+outputs: {}
 
 runs:
   using: "composite"
   steps:
     - name: Download RISCV-GNU-Toolchain
       if: inputs.enable-summary == 'true'
+      shell: bash
       run: |
         echo "GCC Cache Miss -> downloading toolchain" >> $GITHUB_STEP_SUMMARY
 
     - name: Download RISCV-GNU-Toolchain
-      if: steps.cache-gcc.outputs.cache-hit != 'true'
+      shell: bash
       run: |
         mkdir ${{ inputs.install-dir }}
         wget https://github.com/PhilippvK/riscv-tools/releases/download/gnu_${{ inputs.version }}/${{ inputs.name }}-${{ inputs.os }}-${{ inputs.variant }}.tar.xz -O ${{ inputs.install-dir }}.tar.xz

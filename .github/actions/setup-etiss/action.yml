@@ -25,12 +25,13 @@ inputs:
   enable_summary:
     description: 'Enable Job Summary'
     required: true
-outputs: []
+outputs: {}
 
 runs:
   using: "composite"
   steps:
     - name: Patch ETISS (S4E)
+      shell: bash
       run: |
         cp -r riscv-coredsl-extensions/gen_output/${{ env.ETISS_TOP }}/* etiss/ArchImpl/  # TODO: generalize!
         cd etiss
@@ -38,6 +39,7 @@ runs:
         sed -i "s/${{ env.ETISS_BASE_ARCH }}/${{ env.ETISS_ARCH }}/g" ArchImpl/${{ env.ETISS_ARCH }}/${{ env.ETISS_ARCH }}ArchSpecificImp.cpp
 
     - name: Build ETISS
+      shell: bash
       run: |
         cmake -S etiss -B etiss/build -DCMAKE_INSTALL_PREFIX=$(pwd)/etiss/build/install -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
         cmake --build etiss/build -j$(nproc)

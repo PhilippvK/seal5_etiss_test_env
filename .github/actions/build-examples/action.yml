@@ -32,7 +32,7 @@ inputs:
   enable_summary:
     description: 'Enable Job Summary'
     required: true
-outputs: []
+outputs: {}
 
 runs:
   using: "composite"
@@ -40,6 +40,7 @@ runs:
     # TODO merge GCC & GCC step!
     - name: Build Examples (GCC Toolchain)
       if: inputs.toolchain == 'gcc'
+      shell: bash
       run: |
         cd ${{ inputs.examples-dir }}
         cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=rv32gc-toolchain.cmake -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -DCMAKE_INSTALL_PREFIX=$(pwd)/build/install -DRISCV_ARCH=${{ inputs.arch }} -DRISCV_ABI=${{ inputs.abi }} -DRISCV_TOOLCHAIN_PREFIX=$(pwd)/../gnu/ -DRISCV_TOOLCHAIN_BASENAME=${{ inputs.tc-name }}
@@ -51,6 +52,7 @@ runs:
 
     - name: Build Examples (LLVM Toolchain)
       if: inputs.toolchain == 'llvm'
+      shell: bash
       run: |
         # TODO: only keep install dir of llvm!
         export PATH=$SEAL5_LLVM_DIR/.seal5/build/${{ env.SEAL5_BUILD_CONFIG }}/bin/:$PATH

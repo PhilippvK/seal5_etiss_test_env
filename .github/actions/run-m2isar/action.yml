@@ -18,16 +18,18 @@ inputs:
     # TODO: only path file and extract top name automatically
     required: true
     default: ''
-outputs: []
+outputs: {}
 
 runs:
   using: "composite"
   steps:
     - name: Append to Summary
       if: inputs.enable_summary == 'true'
+      shell: bash
       run: echo "ETISS Cache Miss -> rebuild required" >> $GITHUB_STEP_SUMMARY
 
     - name: Setup M2-ISA-R
+      shell: bash
       run: |
         cd M2-ISA-R
         # virtualenv -p python${{ inputs.python-version }} venv
@@ -37,6 +39,7 @@ runs:
 
     - name: Run M2-ISA-R
       if: steps.cache-etiss.outputs.cache-hit != 'true'
+      shell: bash
       run: |
         cd M2-ISA-R
         source venv/bin/activate

@@ -28,12 +28,13 @@ inputs:
   enable_summary:
     description: 'Enable Job Summary'
     required: true
-outputs: []
+outputs: {}
 
 runs:
   using: "composite"
   steps:
     - name: Setup Seal5
+      shell: bash
       run: |
         cd seal5
         # virtualenv -p python${{ matrix.python-version }} venv
@@ -44,10 +45,12 @@ runs:
 
     - name: Run Seal5 S4E Demo
       if: inputs.enable_summary == 'true'
+      shell: bash
       run: |
         echo "Seal5 Cache Miss -> rebuild required" >> $GITHUB_STEP_SUMMARY
 
     - name: Run Seal5 S4E Demo
+      shell: bash
       run: |
         cd seal5/
         source venv/bin/activate
@@ -56,6 +59,7 @@ runs:
         # TODO: expose ccache etc.
 
     - name: Compress Seal5 install dir
+      shell: bash
       run: |
         # TODO: make compression optional
         cd ${{ inputs.install-dir }}
