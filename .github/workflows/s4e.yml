@@ -241,7 +241,7 @@ jobs:
       uses: ./.github/actions/build-examples
       with:
         enable-summary: true
-        examples-dir: ${{ githb.workspace }}/etiss_riscv_examples_s4e
+        examples-dir: ${{ github.workspace }}/etiss_riscv_examples_s4e
         gnu-dir: ${{ github.workspace }}/gnu
         toolchain: ${{ env.TOOLCHAIN }}
         build-type: ${{ env.BUILD_TYPE }}
