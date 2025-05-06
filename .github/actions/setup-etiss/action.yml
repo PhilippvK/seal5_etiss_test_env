@@ -1,0 +1,44 @@
+name: 'Update Refs'
+description: 'Update submodule commits based on trigger'
+inputs:
+  etiss-arch:
+    description: 'Name of ETISS arch'  # TODO: multiple
+    required: true
+    default: 'RV32IMACFD'
+  etiss-arch-base:
+    description: 'Name of baseline ETISS arch'
+    required: true
+    default: 'RV32IMACFD'
+  cdsl-top-name:
+    description: 'Name of coredsl file (without extension)'
+    required: true
+    default: ''
+  cdsl-top-dir:
+    description: 'Path to directory contaning coredsl file'
+    # TODO: only path file and extract top name automatically
+    required: true
+    default: ''
+  build-type:
+    description: 'Option for -DCMAKE_BUILD_TYPE'
+    required: true
+    default: 'Release'
+  enable_summary:
+    description: 'Enable Job Summary'
+    required: true
+outputs: []
+
+runs:
+  using: "composite"
+  steps:
+    - name: Patch ETISS (S4E)
+      run: |
+        cp -r riscv-coredsl-extensions/gen_output/${{ env.ETISS_TOP }}/* etiss/ArchImpl/  # TODO: generalize!
+        cd etiss
+        cp ArchImpl/${{ env.ETISS_BASE_ARCH }}/${{ env.ETISS_BASE_ARCH }}ArchSpecificImp.cpp ArchImpl/${{ env.ETISS_ARCH }}/${{ env.ETISS_ARCH }}ArchSpecificImp.cpp
+        sed -i "s/${{ env.ETISS_BASE_ARCH }}/${{ env.ETISS_ARCH }}/g" ArchImpl/${{ env.ETISS_ARCH }}/${{ env.ETISS_ARCH }}ArchSpecificImp.cpp
+
+    - name: Build ETISS
+      run: |
+        cmake -S etiss -B etiss/build -DCMAKE_INSTALL_PREFIX=$(pwd)/etiss/build/install -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+        cmake --build etiss/build -j$(nproc)
+        cmake --install etiss/build

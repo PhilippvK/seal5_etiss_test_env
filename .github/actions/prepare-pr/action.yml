@@ -1,0 +1,53 @@
+name: 'Update Refs'
+description: 'Update submodule commits based on trigger'
+inputs:
+  trigger:
+    description: 'Which repo triggered the workflow'
+    required: true
+    default: ''
+  ref:
+    description: 'New ref/commit to checkout'
+    required: true
+    default: ''
+outputs:
+  num-changed:
+    description: "Number of changes in repo"
+    value: ${{ steps.check-branch.outputs.BRANCH_EXISTS }}
+  enable_summary:
+    description: 'Enable Job Summary'
+    required: true
+    default: 'true'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check if PR Branch already exists
+      id: check-branch
+      # if: steps.update-refs.outputs.num-changed != '0'
+      run: |
+        CHECK_BRANCH=$(git ls-remote --heads origin pr_update_${{ inputs.trigger }} | wc -l 2>&1)
+        echo "BRANCH_EXISTS=$CHECK_BRANCH" >> $GITHUB_OUTPUT   #1 if branch exists, 0 if not
+
+    - name: Switch to PR Branch
+      # if: steps.check_branch.outputs.BRANCH_EXISTS == '1' && steps.update-refs.outputs.num-changed != '0'
+      if: steps.check_branch.outputs.BRANCH_EXISTS == '1'
+      run: |
+        git remote set-url origin https://x-access-token:${{ secrets.github_key }}@github.com/$GITHUB_REPOSITORY
+        # git fetch --all
+        git fetch origin
+        # git stash
+        # git checkout pr_update_${{ inputs.trigger }}
+        # git checkout main  # TODO: do not hardcode
+        git branch -d -r origin/pr_update_${{ inputs.trigger }}
+        git checkout -b pr_update_${{ inputs.trigger }}
+        # git stash pop
+
+    # - name: Create PR Branch
+    #   if: steps.check_branch.outputs.BRANCH_EXISTS == '0' && steps.update-refs.outputs.num-changed != '0'
+    #   run: |
+    #     git checkout -b pr_update_${{ inputs.trigger }}
+
+    - name: Commit Refs to PR branch
+      # if: steps.update-refs.outputs.num-changed != '0'
+      run: |
+        git commit -m "Auto-Update ${{ inputs.trigger }} submodule to ${{ inputs.ref }}"

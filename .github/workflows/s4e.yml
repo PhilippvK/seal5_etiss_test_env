@@ -105,100 +105,18 @@ jobs:
         echo "Triggered from: ${{ github.event.client_payload.from }}" >> $GITHUB_STEP_SUMMARY
         echo >> $GITHUB_STEP_SUMMARY
 
-    - name: Update CDSL ref
-      if: github.event.client_payload.from == 'cdsl'
-      run:
-        git -C etiss_arch_riscv checkout ${{ github.event.client_payload.ref }}
-        git -C etiss_arch_riscv submodule update --init --recursive
-        git add etiss_arch_riscv
+    - name: Update Submodule Refs
+      id: update-refs
+      uses: ./.github/actions/update-refs
+      if: github.event.client_payload.from != ''
+      with:
+          trigger: ${{ github.event.client_payload.from }}
+          ref: ${{ github.event.client_payload.ref }}
+          enable-summary: true
 
-    - name: Update S4E CDSL ref
-      # if: github.event.event_type == 's4e-cdsl-event'
-      if: github.event.client_payload.from == 's4e-cdsl'
-      run: |
-        git -C riscv-coredsl-extensions checkout ${{ github.event.client_payload.ref }}
-        git add riscv-coredsl-extensions
-        echo "Updated Ref: riscv-coredsl-extensions -> ${{ github.event.client_payload.ref }}" >> $GITHUB_STEP_SUMMARY
-
-    - name: Update M2-ISA-R ref
-      # if: github.event.event_type == 'm2isar-event'
-      if: github.event.client_payload.from == 'm2isar'
-      run: |
-        git -C M2-ISA-R checkout ${{ github.event.client_payload.ref }}
-        git add M2-ISA-R
-        echo "Updated Ref: M2-ISA-R -> ${{ github.event.client_payload.ref }}" >> $GITHUB_STEP_SUMMARY
-
-    - name: Update Seal5 ref
-      # if: github.event.event_type == 'seal5-event'
-      if: github.event.client_payload.from == 'seal5'
-      run: |
-        git -C seal5 checkout ${{ github.event.client_payload.ref }}
-        git -C seal5 submodule update --init --recursive
-        git add seal5
-        echo "Updated Ref: seal5 -> ${{ github.event.client_payload.ref }}" >> $GITHUB_STEP_SUMMARY
-
-    # - name: Update Examples ref
-    #   if: github.event.event_type == 'examples-event'
-    #   if: github.event.client_payload.from == 'examples'
-    #   run: |
-    #     git -C etiss_riscv_examples checkout ${{ github.event.client_payload.ref }}
-    #     git -C etiss_riscv_examples submodule update --init --recursive
-    #     git add etiss_riscv_examples
-
-    - name: Update S4E Examples ref
-      # if: github.event.event_type == 's4e-examples-event'
-      if: github.event.client_payload.from == 's4e-examples'
-      run: |
-        git -C etiss_riscv_examples_s4e checkout ${{ github.event.client_payload.ref }}
-        git -C etiss_riscv_examples_s4e submodule update --init --recursive
-        git add etiss_riscv_examples_s4e
-        echo "Updated Ref: etiss_riscv_examples_s4e -> ${{ github.event.client_payload.ref }}" >> $GITHUB_STEP_SUMMARY
-
-    - name: Update ETISS ref
-      # if: github.event.event_type == 'etiss-event'
-      if: github.event.client_payload.from == 'etiss'
-      run: |
-        git -C etiss checkout ${{ github.event.client_payload.ref }}
-        git add etiss
-        echo "Updated Ref: etiss -> ${{ github.event.client_payload.ref }}" >> $GITHUB_STEP_SUMMARY
-
-    - name: Add and count changed files
-      id: count_files
-      working-directory: ./
-      run: |
-        NUM_STAGED=$(git diff --cached --numstat | wc -l 2>&1)
-        echo "NUM_CHANGED=$NUM_STAGED" >> $GITHUB_OUTPUT
-
-    - name: Check if PR Branch already exists
-      if: steps.count_files.outputs.NUM_CHANGED != '0'
-      id: check_branch
-      run: |
-        CHECK_BRANCH=$(git ls-remote --heads origin pr_update_${{ github.event.client_payload.from }} | wc -l 2>&1)
-        echo "BRANCH_EXISTS=$CHECK_BRANCH" >> $GITHUB_OUTPUT   #1 if branch exists, 0 if not
-
-    - name: Switch to PR Branch
-      if: steps.check_branch.outputs.BRANCH_EXISTS == '1' && steps.count_files.outputs.NUM_CHANGED != '0'
-      run: |
-        git remote set-url origin https://x-access-token:${{ secrets.github_key }}@github.com/$GITHUB_REPOSITORY
-        # git fetch --all
-        git fetch origin
-        # git stash
-        # git checkout pr_update_${{ github.event.client_payload.from }}
-        # git checkout main  # TODO: do not hardcode
-        git branch -d -r origin/pr_update_${{ github.event.client_payload.from }}
-        git checkout -b pr_update_${{ github.event.client_payload.from }}
-        # git stash pop
-
-    # - name: Create PR Branch
-    #   if: steps.check_branch.outputs.BRANCH_EXISTS == '0' && steps.count_files.outputs.NUM_CHANGED != '0'
-    #   run: |
-    #     git checkout -b pr_update_${{ github.event.client_payload.from }}
-
-    - name: Commit Refs to PR branch
-      if: steps.count_files.outputs.NUM_CHANGED != '0'
-      run: |
-        git commit -m "Auto-Update ${{ github.event.client_payload.from }} submodule to ${{ github.event.client_payload.ref }}"
-
+    - name: Prepare PR Branch
+      if: steps.update-refs.outputs.num-changed != '0'
+      uses: ./.github/actions/prepare-pr
 
     - name: CDSL Workaround
       run: |
@@ -215,17 +133,6 @@ jobs:
         cat s4e-mac.core_desc
         cat tum_mod.core_desc
 
-    - name: Get Refs
-      id: refs
-      run: |
-        echo "seal5_ref=$(git -C seal5 rev-parse HEAD)" >> $GITHUB_OUTPUT
-        echo "etiss_ref=$(git -C etiss rev-parse HEAD)" >> $GITHUB_OUTPUT
-        echo "examples_ref=$(git -C etiss_riscv_examples rev-parse HEAD)" >> $GITHUB_OUTPUT
-        echo "s4e_examples_ref=$(git -C etiss_riscv_examples_s4e rev-parse HEAD)" >> $GITHUB_OUTPUT
-        echo "m2isar_ref=$(git -C M2-ISA-R rev-parse HEAD)" >> $GITHUB_OUTPUT
-        echo "cdsl-event, cdsl_ref=$(git -C etiss_arch_riscv rev-parse HEAD)" >> $GITHUB_OUTPUT
-        echo "s4e_cdsl_ref=$(git -C riscv-coredsl-extensions rev-parse HEAD)" >> $GITHUB_OUTPUT
-
     - name: Download Cached ETISS Binaries (S4E)
       id: cache-etiss
       uses: actions/cache@v4
@@ -233,46 +140,29 @@ jobs:
         cache-name: cache-etiss-binaries
       with:
         path: etiss/build/install
-        key: etiss-binaries-s4e-${{ matrix.ubuntu-version }}-${{ steps.refs.outputs.etiss_ref }}-${{ steps.refs.outputs.m2isar_ref }}-${{ steps.refs.outputs.s4e_cdsl_ref }}
+        key: etiss-binaries-s4e-${{ matrix.ubuntu-version }}-${{ steps.update-refs.outputs.etiss_ref }}-${{ steps.update-refs.outputs.m2isar_ref }}-${{ steps.update-refs.outputs.s4e_cdsl_ref }}
 
-    - name: Setup M2-ISA-R
+    # TODO: cache m2 artifacts
+    - name: Setup & Run M2-ISA-R
       if: steps.cache-etiss.outputs.cache-hit != 'true'
-      run: |
-        cd M2-ISA-R
-        virtualenv -p python${{ matrix.python-version }} venv
-        source venv/bin/activate
-        pip install -e .
-        echo "ETISS Cache Miss -> rebuild required" >> $GITHUB_STEP_SUMMARY
+      uses: ./.github/actions/run-m2isar
+      with:
+        python-version: ${{ matrix.python-version }}
+        enable-summary: true
+        # TODO: merge into one input
+        cdsl-top-name: ${{ env.ETISS_TOP }}
+        cdsl-top-dir: ${{ github.workspace }}/riscv-coredsl-extensions
 
-    - name: Run M2-ISA-R
+    - name: Patch & Build ETISS
       if: steps.cache-etiss.outputs.cache-hit != 'true'
-      run: |
-        cd M2-ISA-R
-        source venv/bin/activate
-        python -m m2isar.frontends.coredsl2.parser ../riscv-coredsl-extensions/${{ env.ETISS_TOP }}.core_desc
-        python -m m2isar.backends.etiss.writer ../riscv-coredsl-extensions/gen_model/${{ env.ETISS_TOP }}.m2isarmodel --separate --static-scalars
-
-    # - name: Upload M2ISAR Model artifacts
-    #   uses: actions/upload-artifact@v4
-    #   with:
-    #      name: m2isar-model-files
-    #      path: |
-    #        riscv-coredsl-extensions/gen_output
-
-    - name: Patch ETISS (S4E)
-      if: steps.cache-etiss.outputs.cache-hit != 'true'
-      run: |
-        cp -r riscv-coredsl-extensions/gen_output/${{ env.ETISS_TOP }}/* etiss/ArchImpl/  # TODO: generalize!
-        cd etiss
-        cp ArchImpl/${{ env.ETISS_BASE_ARCH }}/${{ env.ETISS_BASE_ARCH }}ArchSpecificImp.cpp ArchImpl/${{ env.ETISS_ARCH }}/${{ env.ETISS_ARCH }}ArchSpecificImp.cpp
-        sed -i "s/${{ env.ETISS_BASE_ARCH }}/${{ env.ETISS_ARCH }}/g" ArchImpl/${{ env.ETISS_ARCH }}/${{ env.ETISS_ARCH }}ArchSpecificImp.cpp
-
-    - name: Build ETISS
-      if: steps.cache-etiss.outputs.cache-hit != 'true'
-      run: |
-        cmake -S etiss -B etiss/build -DCMAKE_INSTALL_PREFIX=$(pwd)/etiss/build/install -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-        cmake --build etiss/build -j$(nproc)
-        cmake --install etiss/build
+      uses: ./.github/actions/setup-etiss
+      with:
+        enable-summary: true
+        cdsl-top-name: ${{ env.ETISS_TOP }}
+        cdsl-top-dir: ${{ github.workspace }}/riscv-coredsl-extensions
+        etiss-arch: ${{ env.ETISS_ARCH }}
+        etiss-arch-base: ${{ env.ETISS_BASE_ARCH }}
+        build-type: ${{ env.BUILD_TYPE }}
 
     - name: Download Cached Seal5 Binaries
       id: cache-seal5
@@ -282,23 +172,36 @@ jobs:
       with:
         path: ${{ env.SEAL5_LLVM_DIR }}.tar.xz
         # path: ${{ env.SEAL5_OUT_DIR }}/seal5_llvm_install
-        key: seal5-binaries-s4e-${{ matrix.ubuntu-version }}-${{ matrix.python-version }}-${{ steps.refs.outputs.seal5_ref }}-${{ steps.refs.outputs.s4e_cdsl_ref }}-${{ env.SEAL5_BUILD_CONFIG }}
+        key: seal5-binaries-s4e-${{ matrix.ubuntu-version }}-${{ matrix.python-version }}-${{ steps.update-refs.outputs.seal5_ref }}-${{ steps.update-refs.outputs.s4e_cdsl_ref }}-${{ env.SEAL5_BUILD_CONFIG }}
         # restore-keys: |
         #   seal5-binaries-${{ github.event.client_payload.name }}-${{ matrix.ubuntu-version }}-
         #   seal5-binaries-${{ github.event.client_payload.name }}-
 
-    - name: Setup Seal5
+    - name: Setup & Run Seal5
       if: steps.cache-seal5.outputs.cache-hit != 'true'
+      uses: ./.github/actions/setup-seal5
+      with:
+        enable-summary: true
+        out-dir: ${{ env.SEAL5_OUT_DIR }}
+        install-dir: ${{ env.SEAL5_LLVM_DIR }}
+        cdsl-dir: ${{ github.workspace }}/riscv-coredsl-extensions }}
+        build-config: ${{ env.SEAL5_BUILD_CONFIG }}
+        llvm-ref: ${{ env.LLVM_REF }}
+        deme-script: ${{ github.workspace }}/seal5/examples/s4e_demo.py
+
+    - name: Setup Seal5
+      # if: steps.cache-seal5.outputs.cache-hit != 'true'
       run: |
         cd seal5
-        virtualenv -p python${{ matrix.python-version }} venv
+        # virtualenv -p python${{ matrix.python-version }} venv
+        virtualenv -p python3 venv
         source venv/bin/activate
         pip install -r requirements.txt
         pip install -e .
         echo "Seal5 Cache Miss -> rebuild required" >> $GITHUB_STEP_SUMMARY
 
     - name: Run Seal5 S4E Demo
-      if: steps.cache-seal5.outputs.cache-hit != 'true'
+      # if: steps.cache-seal5.outputs.cache-hit != 'true'
       run: |
         cd seal5/
         source venv/bin/activate
@@ -333,6 +236,18 @@ jobs:
         # restore-keys: |
         #   gcc-binaries-${{ matrix.ubuntu-version }}-${{ env.TC_NAME}}-${{ env.TC_VERSION }}-${{ env.TC_VARIANT }}
 
+    - name: Download GNU Toolchain
+      if: steps.cache-gcc.outputs.cache-hit != 'true'
+      uses: ./.github/actions/setup-gnu
+      with:
+        enable-summary: true
+        install-dir: ${{ env.SEAL5_LLVM_DIR }}
+        version: ${{ env.TC_VERSION }}
+        name: ${{ env.TC_NAME }}
+        variant: ${{ env.TC_VARIANT }}
+        os: ${{ env.TC_NAME }}-${{ env.TC_OS }}
+
+
     - name: Download RISCV-GNU-Toolchain
       if: steps.cache-gcc.outputs.cache-hit != 'true'
       run: |
@@ -353,6 +268,15 @@ jobs:
     #     cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=rv32gc-llvm-toolchain.cmake -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DCMAKE_INSTALL_PREFIX=$(pwd)/build/install -DRISCV_ARCH=${{ env.ARCH }} -DRISCV_ABI=${{ env.ABI }} -DRISCV_TOOLCHAIN_PREFIX=$(pwd)/../gnu/ -DRISCV_TOOLCHAIN_BASENAME=${{ env.RISCV_GCC_NAME }}
     #     cmake --build build -j$(nproc) -t ${{ env.PROG }}
     #     cmake --install build
+
+    - name: Build Examples
+      with:
+        enable-summary: true
+        gnu-dir:
+        build-type:
+        arch:
+        abi:
+        progs:
 
     - name: Build S4E Examples
       run: |
@@ -375,6 +299,13 @@ jobs:
     #       # export LD_LIBRARY_PATH=$ETISS_PREBUILT_DIR/lib:$ETISS_PREBUILT_DIR/lib/plugins:$LD_LIBRRARY_PATH
     #       # export PATH=$ETISS_PREBUILT_DIR/bin/:$PATH
     #       etiss/build/install/bin/bare_etiss_processor -ietiss_riscv_examples/build/install/ini/${{ env.PROG }}.ini --arch.cpu=${{ env.ETISS_ARCH }} 2>&1 | tee out.txt
+
+    - name: Run Examples
+      with:
+        enable-summary: true
+        etiss-install-dir:
+        etiss-arch:
+        progs:
 
     - name: Run S4E Example ${{ env.PROG }} on ${{ env.ETISS_ARCH }}
       run: |
@@ -416,8 +347,13 @@ jobs:
     - name: Cleanup
       run: rm out.txt
 
+    - name: Finalize PR
+      uses: ./.github/actions/finalize-pr
+      with:
+        enable-summary: true
+
     - name: Push changes to PR branch
-      if: steps.check_branch.outputs.BRANCH_EXISTS == '1' && steps.count_files.outputs.NUM_CHANGED != '0'
+      if: steps.check_branch.outputs.BRANCH_EXISTS == '1' && steps.update-refs.outputs.num-changed != '0'
       uses: ad-m/github-push-action@master
       with:
         # github_token: ${{ secrets.SEAL5_ACCESS_TOKEN }}
@@ -425,7 +361,7 @@ jobs:
         force: true
 
     - name: Create Pull Request
-      if: steps.check_branch.outputs.BRANCH_EXISTS == '0' && steps.count_files.outputs.NUM_CHANGED != '0'
+      if: steps.check_branch.outputs.BRANCH_EXISTS == '0' && steps.update-refs.outputs.num-changed != '0'
       uses: peter-evans/create-pull-request@v6
       with:
         commit-message: "Auto-Update ${{ github.event.client_payload.from }} submodule to ${{ github.event.client_payload.ref }}"

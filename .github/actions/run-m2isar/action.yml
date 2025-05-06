@@ -1,0 +1,51 @@
+name: 'Setup & Run M2-ISA-R'
+description: 'Setup M2-ISA-R, Run CoreDSL2 Parser and ETISS Writer'
+inputs:
+  # python-version:
+  #   description: 'Python Version'
+  #   required: true
+  #   default: '3.10'
+  enable-summary:
+    description: 'Enable Job Summary'
+    required: true
+    default: 'true'
+  cdsl-top-name:
+    description: 'Name of coredsl file (without extension)'
+    required: true
+    default: ''
+  cdsl-top-dir:
+    description: 'Path to directory contaning coredsl file'
+    # TODO: only path file and extract top name automatically
+    required: true
+    default: ''
+outputs: []
+
+runs:
+  using: "composite"
+  steps:
+    - name: Append to Summary
+      if: inputs.enable_summary == 'true'
+      run: echo "ETISS Cache Miss -> rebuild required" >> $GITHUB_STEP_SUMMARY
+
+    - name: Setup M2-ISA-R
+      run: |
+        cd M2-ISA-R
+        # virtualenv -p python${{ inputs.python-version }} venv
+        virtualenv -p python3 venv
+        source venv/bin/activate
+        pip install -e .
+
+    - name: Run M2-ISA-R
+      if: steps.cache-etiss.outputs.cache-hit != 'true'
+      run: |
+        cd M2-ISA-R
+        source venv/bin/activate
+        python -m m2isar.frontends.coredsl2.parser ${{ inputs.cdsl-top-dir }}/${{ inputs.cdsl-top-name }}.core_desc
+        python -m m2isar.backends.etiss.writer ${{ inputs.cdsl-top-dir }}/gen_model/${{ inputs.cdsl-top-name }}.m2isarmodel --separate --static-scalars
+
+    # - name: Upload M2ISAR Model artifacts
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #      name: m2isar-model-files
+    #      path: |
+    #        ${{ inputs.cdsl-top-dir }}/gen_output
