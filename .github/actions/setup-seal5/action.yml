@@ -25,7 +25,7 @@ inputs:
     description: 'Path to demo script'
     required: true
     default: ''
-  enable_summary:
+  enable-summary:
     description: 'Enable Job Summary'
     required: true
 outputs: {}
@@ -44,7 +44,7 @@ runs:
         pip install -e .
 
     - name: Run Seal5 S4E Demo
-      if: inputs.enable_summary == 'true'
+      if: inputs.enable-summary == 'true'
       shell: bash
       run: |
         echo "Seal5 Cache Miss -> rebuild required" >> $GITHUB_STEP_SUMMARY

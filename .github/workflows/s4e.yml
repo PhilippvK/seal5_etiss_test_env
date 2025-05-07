@@ -227,7 +227,7 @@ jobs:
         version: ${{ env.TC_VERSION }}
         name: ${{ env.TC_NAME }}
         variant: ${{ env.TC_VARIANT }}
-        os: ${{ env.TC_NAME }}-${{ env.TC_OS }}
+        os: ${{ env.TC_OS }}-${{ matrix.ubuntu-version }}
 
 
     # - name: Build Examples

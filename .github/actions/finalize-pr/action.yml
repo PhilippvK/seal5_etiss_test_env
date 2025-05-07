@@ -17,7 +17,7 @@ inputs:
     description: 'If branch already exists'
     required: true
     default: '0'
-  enable_summary:
+  enable-summary:
     description: 'Enable Job Summary'
     required: true
     default: 'true'

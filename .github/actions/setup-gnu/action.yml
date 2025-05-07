@@ -21,7 +21,7 @@ inputs:
     description: 'Operating System'
     required: true
     default: '?'
-  enable_summary:
+  enable-summary:
     description: 'Enable Job Summary'
     required: true
 outputs: {}

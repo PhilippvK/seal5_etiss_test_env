@@ -24,7 +24,7 @@ runs:
   using: "composite"
   steps:
     - name: Append to Summary
-      if: inputs.enable_summary == 'true'
+      if: inputs.enable-summary == 'true'
       shell: bash
       run: echo "ETISS Cache Miss -> rebuild required" >> $GITHUB_STEP_SUMMARY
 

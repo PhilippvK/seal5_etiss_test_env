@@ -9,7 +9,7 @@ inputs:
     description: 'New ref/commit to checkout'
     required: true
     default: ''
-  enable_summary:
+  enable-summary:
     description: 'Enable Job Summary'
     required: true
     default: 'true'

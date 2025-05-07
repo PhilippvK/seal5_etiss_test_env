@@ -13,7 +13,7 @@ inputs:
     description: 'Name of used ETISS CPU arch'
     required: true
     default: '?'
-  enable_summary:
+  enable-summary:
     description: 'Enable Job Summary'
     required: true
 outputs: {}

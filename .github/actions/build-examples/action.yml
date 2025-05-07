@@ -29,7 +29,7 @@ inputs:
     description: 'Comma-separated list of programs'
     required: true
     default: 'hello_world'
-  enable_summary:
+  enable-summary:
     description: 'Enable Job Summary'
     required: true
 outputs: {}

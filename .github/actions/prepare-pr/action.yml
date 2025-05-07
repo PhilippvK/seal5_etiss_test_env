@@ -9,7 +9,7 @@ inputs:
     description: 'New ref/commit to checkout'
     required: true
     default: ''
-  enable_summary:
+  enable-summary:
     description: 'Enable Job Summary'
     required: true
     default: 'true'
@@ -20,10 +20,6 @@ outputs:
   branch-exists:
     description: "Does PR branch already exist?"
     value: ${{ steps.check-branch.outputs.BRANCH_EXISTS }}
-  enable_summary:
-    description: 'Enable Job Summary'
-    required: true
-    default: 'true'
 
 runs:
   using: "composite"

@@ -22,7 +22,7 @@ inputs:
     description: 'Option for -DCMAKE_BUILD_TYPE'
     required: true
     default: 'Release'
-  enable_summary:
+  enable-summary:
     description: 'Enable Job Summary'
     required: true
 outputs: {}
